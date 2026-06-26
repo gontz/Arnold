@@ -126,9 +126,44 @@ def _install_owned_dir_symlink(
     }
 
 
+def _ensure_composed_bundles() -> None:
+    """Generate composed skill bundles if any are missing.
+
+    The ``_composed/`` and ``_codex_skills/`` directories under ``data/``
+    are generated artifacts (produced by :func:`handle_regen_composed`),
+    not checked into the repo.  A fresh checkout that runs ``setup``
+    before ``setup --regen-composed`` would silently skip every codex
+    skill with a cryptic "canonical missing" path error.  This helper
+    detects missing bundles and regenerates them transparently so the
+    plain ``setup`` command works out of the box.
+    """
+    from importlib import resources
+
+    data_dir = Path(str(resources.files("arnold_pipelines.megaplan").joinpath("data")))
+    composed_dir = data_dir / "_composed"
+    codex_skills_dir = data_dir / "_codex_skills"
+
+    # Check whether any expected artifact is missing.
+    needed_composed = ["claude_skill.md", "codex_skill.md", "cursor_rule.mdc"]
+    missing = any(not (composed_dir / name).is_file() for name in needed_composed)
+    # _codex_skills/ is created on first regen; if the dir doesn't exist
+    # at all, every codex target is missing.
+    if not codex_skills_dir.is_dir():
+        missing = True
+
+    if missing:
+        handle_regen_composed()
+
+
 def handle_setup_global(force: bool = False, home: Path | None = None) -> StepResponse:
     if home is None:
         home = Path.home()
+    # Auto-generate composed bundles (including _codex_skills/ directories)
+    # if any are missing. Without this, a fresh checkout's `setup` silently
+    # skips every codex skill with a cryptic "canonical missing" path error
+    # because the _codex_skills/ directories are generated artifacts, not
+    # checked into the repo.
+    _ensure_composed_bundles()
     installed: list[dict[str, Any]] = []
     detected_count = 0
     for target in _GLOBAL_TARGETS:
