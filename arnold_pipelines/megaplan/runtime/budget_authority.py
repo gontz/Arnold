@@ -144,7 +144,7 @@ class BudgetAuthority:
     # -- flock backend -------------------------------------------------------
 
     def _charge_flock(self, key: str, amount: float) -> float:
-        import fcntl
+        from arnold.runtime import filelock as fcntl
 
         self.base_dir.mkdir(parents=True, exist_ok=True)
         lock_path = self.base_dir / f"{self.tenant}.budget.lock"
@@ -258,7 +258,7 @@ def reserve_tenant_quota(
     if not flock:
         return _reserve()
 
-    import fcntl
+    from arnold.runtime import filelock as fcntl
 
     base.mkdir(parents=True, exist_ok=True)
     lock_path = base / f"{tenant}.budget.lock"

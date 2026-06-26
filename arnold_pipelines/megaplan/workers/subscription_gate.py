@@ -41,7 +41,7 @@ Configuration (env, read fresh on every acquire):
 from __future__ import annotations
 
 import errno
-import fcntl
+from arnold.runtime import filelock as fcntl
 import os
 import time
 from contextlib import contextmanager

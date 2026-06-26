@@ -60,7 +60,7 @@ cd ~/Documents
 git clone https://github.com/peteromallet/arnold.git
 cd arnold
 python -m pip install -e .
-python -m arnold.pipelines.megaplan setup
+python -m arnold_pipelines.megaplan setup
 
 The default `partnered` profile pairs a premium model (Claude or Codex) with cheap DeepSeek. Ask me for whichever I have — an Anthropic/Claude or OpenAI/Codex login — plus a DeepSeek API key (or Fireworks key), and wire them up.
 
@@ -74,7 +74,7 @@ cd ~/Documents
 git clone https://github.com/peteromallet/arnold.git
 cd arnold
 python -m pip install -e .
-python -m arnold.pipelines.megaplan setup
+python -m arnold_pipelines.megaplan setup
 ```
 
 The setup command detects your installed agents and walks you through credentials. The old `[agent]` extra remains as a no-op compatibility alias on current releases, but it is no longer required. You need two things:

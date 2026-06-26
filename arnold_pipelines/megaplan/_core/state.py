@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Literal
 
-import fcntl
+from arnold.runtime import filelock as fcntl
 
 from arnold_pipelines.megaplan.types import (
     ActivePhase,

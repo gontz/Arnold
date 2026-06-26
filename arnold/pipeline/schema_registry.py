@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -158,6 +159,9 @@ class ContractSchemaRegistry:
                 f.flush()
                 os.fsync(f.fileno())
             os.replace(tmp_path, path)
+            # Windows does not support os.open(dir, O_RDONLY) for fsync.
+            if sys.platform == "win32":
+                return
             dir_fd = os.open(path.parent, os.O_RDONLY)
             try:
                 os.fsync(dir_fd)

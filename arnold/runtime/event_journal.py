@@ -18,7 +18,7 @@ Exports
 
 from __future__ import annotations
 
-import fcntl
+from arnold.runtime import filelock as fcntl
 import json
 import os
 import time

@@ -117,7 +117,7 @@ class CapacityLease:
         self._released = True
         try:
             if self.flock and self._fd is not None:
-                import fcntl
+                from arnold.runtime import filelock as fcntl
 
                 try:
                     fcntl.flock(self._fd, fcntl.LOCK_UN)
@@ -215,7 +215,7 @@ def acquire(
     base = (base_dir or default_lease_dir()).resolve()
 
     if flock:
-        import fcntl
+        from arnold.runtime import filelock as fcntl
 
         base.mkdir(parents=True, exist_ok=True)
         fd = os.open(_lock_path(base, tenant), os.O_RDWR | os.O_CREAT, 0o600)

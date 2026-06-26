@@ -205,6 +205,11 @@ def _fsync_file_descriptor(fd: int) -> None:
 def fsync_dir(path: Path) -> None:
     directory = path if path.is_dir() else path.parent
     directory.mkdir(parents=True, exist_ok=True)
+    # Windows does not support opening a directory with os.O_RDONLY for
+    # fsync (raises PermissionError).  Directory fsync is a Unix-only
+    # durability guarantee; skipping it on Windows is safe.
+    if sys.platform == "win32":
+        return
     fd = os.open(directory, os.O_RDONLY)
     try:
         _fsync_file_descriptor(fd)

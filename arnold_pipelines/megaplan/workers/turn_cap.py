@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
-import fcntl
+from arnold.runtime import filelock as fcntl
 
 from arnold_pipelines.megaplan.types import CliError
 
