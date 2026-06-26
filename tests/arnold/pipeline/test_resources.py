@@ -65,8 +65,8 @@ class TestPipelineResourceBundle:
             "/some/pkg/pipeline.py",
             prompt_dir="prompts",
         )
-        assert bundle.base_dir == Path("/some/pkg")
-        assert bundle.prompt_dir == Path("/some/pkg/prompts")
+        assert bundle.base_dir == Path("/some/pkg").resolve()
+        assert bundle.prompt_dir == Path("/some/pkg").resolve() / "prompts"
 
     def test_from_module_custom_resources(self) -> None:
         bundle = PipelineResourceBundle.from_module(
@@ -75,7 +75,7 @@ class TestPipelineResourceBundle:
             resources={"key": "val"},
             prompts={"critique": "Be sharp."},
         )
-        assert bundle.prompt_dir == Path("/some/pkg/my_prompts")
+        assert bundle.prompt_dir == Path("/some/pkg").resolve() / "my_prompts"
         assert bundle.resources == {"key": "val"}
         assert bundle.prompts == {"critique": "Be sharp."}
 

@@ -29,11 +29,18 @@ def test_spawn_defaults_to_new_session_and_strips_redundant_setsid(monkeypatch) 
 
     monkeypatch.setattr(subprocess, "Popen", FakePopen)
 
-    spawn(["python", "-V"], preexec_fn=os.setsid)
+    # On Windows os.setsid doesn't exist; use a sentinel that won't be
+    # stripped to verify the collision-stripping only fires for setsid.
+    preexec = os.setsid if hasattr(os, "setsid") else (lambda: None)
+    spawn(["python", "-V"], preexec_fn=preexec)
 
     assert captured["args"] == (["python", "-V"],)
     assert captured["kwargs"]["start_new_session"] is True
-    assert "preexec_fn" not in captured["kwargs"]
+    if hasattr(os, "setsid"):
+        assert "preexec_fn" not in captured["kwargs"]
+    else:
+        # On Windows the sentinel is not os.setsid so it stays.
+        assert "preexec_fn" in captured["kwargs"]
 
 
 def test_spawn_smoke_returns_completed_process() -> None:
@@ -58,6 +65,7 @@ def test_spawn_async_rejects_shell_true() -> None:
     asyncio.run(run())
 
 
+@pytest.mark.skipif(not hasattr(os, "getpgid"), reason="requires POSIX process groups")
 def test_kill_group_uses_term_only_when_escalation_disabled(monkeypatch) -> None:
     calls: list[tuple[int, int]] = []
 
@@ -76,6 +84,7 @@ def test_kill_group_uses_term_only_when_escalation_disabled(monkeypatch) -> None
     assert calls == [(4321, signal.SIGTERM)]
 
 
+@pytest.mark.skipif(not hasattr(os, "getpgid"), reason="requires POSIX process groups")
 def test_kill_group_falls_back_when_pgid_lookup_fails() -> None:
     class FakeProc:
         pid = 1234

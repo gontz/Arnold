@@ -98,6 +98,7 @@ def test_subprocess_isolated_kill_group_fires_on_idle(ctx: StepContext) -> None:
     assert elapsed < 5.0
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="requires /bin/sh and POSIX process groups")
 def test_subprocess_isolated_group_reaped_via_ps_o_pgid(ctx: StepContext, tmp_path: Path) -> None:
     """Grandchild spawned by the child is reaped: pid no longer alive
     after kill_group fires. Uses os.kill(pid, 0) with ``ps -o pgid`` fallback."""

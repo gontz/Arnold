@@ -34,6 +34,11 @@ from arnold.pipeline.step_io_policy import (
 from arnold.pipeline.types import EvidenceArtifactRef, HumanSuspension
 
 
+def _file_uri(path: Path | str) -> str:
+    """Build a cross-platform file: URI from a path."""
+    return Path(path).as_uri()
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -523,7 +528,7 @@ class TestResolveExplicitArtifactPath:
         artifact_file.write_text("winner")
 
         # Also create a display_ref that would match if artifact_ref were used
-        display = _display_ref(name="losing", uri=f"file://{tmp_path / 'losing_file.md'}")
+        display = _display_ref(name="losing", uri=_file_uri(tmp_path / 'losing_file.md'))
         (tmp_path / "losing_file.md").write_text("loser")
 
         decl = _declaration(
@@ -546,7 +551,7 @@ class TestResolveExplicitArtifactPath:
         artifact_file = tmp_path / "declared.md"
         artifact_file.write_text("declared")
 
-        display = _display_ref(name="port_name", uri=f"file://{tmp_path / 'port_file.md'}")
+        display = _display_ref(name="port_name", uri=_file_uri(tmp_path / 'port_file.md'))
         (tmp_path / "port_file.md").write_text("port")
 
         decl = _declaration(artifact_path="declared.md", port="port_name")
@@ -573,7 +578,7 @@ class TestResolveArtifactRef:
 
         display = _display_ref(
             name="scan_result",
-            uri=f"file://{artifact_file}",
+            uri=_file_uri(artifact_file),
         )
         decl = _declaration(artifact_ref={"name": "scan_result"})
 
@@ -607,7 +612,7 @@ class TestResolveArtifactRef:
 
         display = _display_ref(
             name="target",
-            uri=f"file://{artifact_file}",
+            uri=_file_uri(artifact_file),
             content_type="text/markdown",
         )
         # artifact_ref has a different content_type but matching name
@@ -655,7 +660,7 @@ class TestResolvePort:
         artifact_file = tmp_path / "out.json"
         artifact_file.write_text("{}")
 
-        display = _display_ref(name="out_port", uri=f"file://{artifact_file}")
+        display = _display_ref(name="out_port", uri=_file_uri(artifact_file))
         decl = _declaration(port="out_port")
 
         result = resolve_resume_reverify_artifact(
@@ -727,7 +732,10 @@ class TestResolveInvalidPaths:
         assert result.outcome == "invalid"
         assert result.diagnostic is not None
         assert result.diagnostic["code"] == "artifact_path_invalid"
-        assert "relative" in result.diagnostic["detail"].lower()
+        # On Unix the detail says "relative"; on Windows an absolute path
+        # like /absolute/... resolves under the current drive and the
+        # detail says "escapes artifact_root".  Both are valid rejections.
+        assert "relative" in result.diagnostic["detail"].lower() or "escapes" in result.diagnostic["detail"].lower()
 
     def test_parent_escaping_path_rejected(self, tmp_path: Path) -> None:
         """Path that resolves outside artifact_root is rejected."""
@@ -841,7 +849,7 @@ class TestResolveInvalidPaths:
         """display_ref exists but the actual file is missing → artifact_missing."""
         display = _display_ref(
             name="gone",
-            uri=f"file://{tmp_path / 'gone.md'}",
+            uri=_file_uri(tmp_path / 'gone.md'),
         )
         decl = _declaration(artifact_ref={"name": "gone"})
         result = resolve_resume_reverify_artifact(
@@ -870,7 +878,7 @@ class TestResolutionOrdering:
         ref_file = tmp_path / "ref_file.md"
         ref_file.write_text("ref")
 
-        display = _display_ref(name="port_name", uri=f"file://{ref_file}")
+        display = _display_ref(name="port_name", uri=_file_uri(ref_file))
 
         decl = _declaration(
             artifact_path="path_file.md",
@@ -893,8 +901,8 @@ class TestResolutionOrdering:
         port_file = tmp_path / "port.md"
         port_file.write_text("port")
 
-        ref_display = _display_ref(name="ref_name", uri=f"file://{ref_file}")
-        port_display = _display_ref(name="port_name", uri=f"file://{port_file}")
+        ref_display = _display_ref(name="ref_name", uri=_file_uri(ref_file))
+        port_display = _display_ref(name="port_name", uri=_file_uri(port_file))
 
         decl = _declaration(
             artifact_ref={"name": "ref_name"},
@@ -916,7 +924,7 @@ class TestResolutionOrdering:
         port_file = tmp_path / "port_file.md"
         port_file.write_text("port")
 
-        port_display = _display_ref(name="port_name", uri=f"file://{port_file}")
+        port_display = _display_ref(name="port_name", uri=_file_uri(port_file))
         other_display = _display_ref(name="other")
 
         decl = _declaration(
@@ -965,7 +973,7 @@ class TestIntegrationParseResolve:
         file = tmp_path / "result.json"
         file.write_text("{}")
 
-        display = _display_ref(name="result", uri=f"file://{file}")
+        display = _display_ref(name="result", uri=_file_uri(file))
         suspension = _suspension(
             resume_input_schema={
                 "x-arnold-resume": {"artifact_ref": {"name": "result"}},
@@ -986,7 +994,7 @@ class TestIntegrationParseResolve:
         file = tmp_path / "port_out.json"
         file.write_text("{}")
 
-        display = _display_ref(name="port_out", uri=f"file://{file}")
+        display = _display_ref(name="port_out", uri=_file_uri(file))
         suspension = _suspension(
             resume_input_schema={
                 "x-arnold-resume": {"port": "port_out"},
@@ -1118,7 +1126,7 @@ class TestEdgeCases:
         file.write_text("localhost")
 
         display = EvidenceArtifactRef(
-            uri=f"file://localhost{file}",
+            uri=f"file://localhost/{Path(file).as_posix()}",
             content_type="text/markdown",
             name="local",
         )

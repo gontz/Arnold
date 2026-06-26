@@ -21,6 +21,9 @@ _OPERATOR_COMMANDS = frozenset({"status", "trace", "inspect", "override"})
 
 def cli_entry() -> None:
     """Console-script entry point registered in pyproject.toml."""
+    from arnold.runtime.utf8_console import ensure_utf8_console
+
+    ensure_utf8_console()
     sys.exit(main())
 
 

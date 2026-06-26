@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Mapping
@@ -395,7 +396,13 @@ def _file_uri_to_path(uri: str) -> Path | None:
         return None
     if parsed.netloc not in ("", "localhost"):
         return None
-    return Path(unquote(parsed.path))
+    path = unquote(parsed.path)
+    # On Windows, file URIs have the form file:///C:/path/... which
+    # urlparse parses as path="/C:/path/...".  The leading slash before
+    # the drive letter must be stripped so Path() resolves correctly.
+    if sys.platform == "win32" and len(path) >= 3 and path[0] == "/" and path[2] == ":":
+        path = path[1:]
+    return Path(path)
 
 
 def _optional_string(

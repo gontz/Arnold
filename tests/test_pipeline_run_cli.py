@@ -412,7 +412,7 @@ def test_run_pipeline_injects_pipeline_context_without_persisting_internal_input
 
     captured = {}
 
-    def fake_run_pipeline(pipeline, ctx, *, artifact_root):  # noqa: ANN001
+    def fake_run_pipeline(pipeline, ctx, *, artifact_root, **kwargs):  # noqa: ANN001
         captured["inputs"] = dict(ctx.inputs)
         captured["state"] = dict(ctx.state)
         return {"final_stage": pipeline.entry, "state": dict(ctx.state)}
@@ -431,7 +431,7 @@ def test_run_pipeline_injects_pipeline_context_without_persisting_internal_input
             "manifest_hash": "sha256:test-manifest",
         },
     )
-    monkeypatch.setattr(executor_module, "run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(executor_module, "run_pipeline_dispatch", fake_run_pipeline)
 
     rc = cli_run(
         _run_args(
@@ -457,7 +457,7 @@ def test_creative_run_seeds_runtime_state_before_step_context(
     idea_file.write_text("write a poem about a blue door", encoding="utf-8")
     captured = {}
 
-    def fake_run_pipeline(pipeline, ctx, *, artifact_root):  # noqa: ANN001
+    def fake_run_pipeline(pipeline, ctx, *, artifact_root, **kwargs):  # noqa: ANN001
         captured["inputs"] = dict(ctx.inputs)
         captured["state"] = dict(ctx.state)
         return {"final_stage": pipeline.entry, "state": dict(ctx.state)}
@@ -467,7 +467,7 @@ def test_creative_run_seeds_runtime_state_before_step_context(
         "preflight_or_raise",
         lambda *a, **kw: None,
     )
-    monkeypatch.setattr(executor_module, "run_pipeline", fake_run_pipeline)
+    monkeypatch.setattr(executor_module, "run_pipeline_dispatch", fake_run_pipeline)
 
     rc = cli_run(
         _run_args(
@@ -506,8 +506,8 @@ def test_run_persists_runtime_identity_for_new_non_resume_runs(
     monkeypatch.setattr(preflight_module, "preflight_or_raise", lambda *a, **kw: None)
     monkeypatch.setattr(
         executor_module,
-        "run_pipeline",
-        lambda pipeline, ctx, *, artifact_root: {
+        "run_pipeline_dispatch",
+        lambda pipeline, ctx, *, artifact_root, **kw: {
             "final_stage": getattr(pipeline, "entry", "prep"),
             "state": dict(ctx.state),
         },
@@ -622,8 +622,8 @@ def test_run_uses_profile_validate_operation_when_advertised(
     monkeypatch.setattr(registry_module, "dispatch_operation_for", fake_dispatch)
     monkeypatch.setattr(
         executor_module,
-        "run_pipeline",
-        lambda pipeline, ctx, *, artifact_root: {
+        "run_pipeline_dispatch",
+        lambda pipeline, ctx, *, artifact_root, **kw: {
             "final_stage": getattr(pipeline, "entry", "prep"),
             "state": dict(ctx.state),
         },
@@ -679,8 +679,8 @@ def test_run_preserves_generic_preflight_fallback_when_profile_validate_not_adve
     )
     monkeypatch.setattr(
         executor_module,
-        "run_pipeline",
-        lambda pipeline, ctx, *, artifact_root: {
+        "run_pipeline_dispatch",
+        lambda pipeline, ctx, *, artifact_root, **kw: {
             "final_stage": getattr(pipeline, "entry", "prep"),
             "state": dict(ctx.state),
         },
@@ -756,8 +756,8 @@ def test_run_loads_non_megaplan_profiles_via_arnold_loader_without_megaplan_fall
     monkeypatch.setattr(arnold_profiles_module, "resolve_default_profile", fake_resolve_default_profile)
     monkeypatch.setattr(
         executor_module,
-        "run_pipeline",
-        lambda pipeline, ctx, *, artifact_root: {
+        "run_pipeline_dispatch",
+        lambda pipeline, ctx, *, artifact_root, **kw: {
             "final_stage": getattr(pipeline, "entry", "panel_review"),
             "state": dict(ctx.state),
             "profile": dict(ctx.profile),

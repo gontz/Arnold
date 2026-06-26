@@ -96,15 +96,16 @@ def _reap_descendants(pids: list[int], tag: str) -> None:
         except (ProcessLookupError, OSError):
             continue
         logger.debug("kill_group: SIGKILL stray descendant pid=%d%s", pid, tag)
-        try:
-            pgid = os.getpgid(pid)
-        except (ProcessLookupError, OSError):
-            pgid = None
-        if pgid is not None:
+        if hasattr(os, "getpgid"):
             try:
-                os.killpg(pgid, signal.SIGKILL)
+                pgid = os.getpgid(pid)
             except (ProcessLookupError, OSError):
-                pass
+                pgid = None
+            if pgid is not None:
+                try:
+                    os.killpg(pgid, signal.SIGKILL)
+                except (ProcessLookupError, OSError):
+                    pass
         try:
             os.kill(pid, signal.SIGKILL)
         except (ProcessLookupError, OSError):
@@ -118,7 +119,10 @@ def _strip_setsid_collision(kw: dict[str, Any]) -> None:
     redundant preexec_fn=os.setsid then raises EPERM because the child is
     already a session leader.
     """
-    if kw.get("start_new_session") and kw.get("preexec_fn") is os.setsid:
+    if not kw.get("start_new_session"):
+        return
+    preexec = kw.get("preexec_fn")
+    if preexec is not None and hasattr(os, "setsid") and preexec is os.setsid:
         del kw["preexec_fn"]
 
 
